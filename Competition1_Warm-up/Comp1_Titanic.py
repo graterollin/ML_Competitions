@@ -6,6 +6,7 @@
 # Adapted from https://www.kaggle.com/code/preejababu/titanic-data-science-solutions#Acquire-data 
 # and a continuation of homework 1 question 2 
 # ----------------------------
+# TODO: DELETE UNESSECARY PRINT STATEMENTS
 
 # data analysis and wrangling
 import pandas as pd
@@ -45,7 +46,7 @@ for dataset in combine:
     dataset['Title'] = dataset['Title'].replace('Ms', 'Miss')
     dataset['Title'] = dataset['Title'].replace('Mme', 'Mrs')
 
-print(training_set[['Title', 'Survived']].groupby(['Title'], as_index=False).mean())
+#print(training_set[['Title', 'Survived']].groupby(['Title'], as_index=False).mean())
 
 # Converting titles to ordinal
 title_mapping = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5}
@@ -64,15 +65,15 @@ for dataset in combine:
     dataset['Sex'] = dataset['Sex'].map( {'female': 1, 'male': 0} ).astype(int)
 
 # Filling gaps in Age
-print("\nBefore inserting age")
-print(training_set.head(10))
+#print("\nBefore inserting age")
+#print(training_set.head(10))
 
 # Interpolating missing age values separately 
 training_set['Age'] = training_set['Age'].interpolate()
 testing_set['Age'] = training_set['Age'].interpolate()
 
-print("After inserting age")
-print(training_set.head(10))
+#print("After inserting age")
+#print(training_set.head(10))
 
 # Combining existing features parch and sibsp
 for dataset in combine:
@@ -107,14 +108,17 @@ for dataset in combine:
 
 combine = [training_set, testing_set]
 
-print("\nFinal Working test and training sets:")
-print('\n', training_set.head(10))
-print('\n', testing_set.head(10))
+#print("\nFinal Working test and training sets:")
+#print('\n', training_set.head(10))
+#print('\n', testing_set.head(10))
 
 # # ------ Model, predict and solve ------
 X_train = training_set.drop("Survived", axis=1)
+#print("Shape of X_train: ", X_train.shape)
 Y_train = training_set["Survived"]
+#print("Shape of Y_train: ", Y_train.shape)
 X_test  = testing_set.drop("PassengerId", axis=1).copy()
+#print("Shape of X_test: ", X_test.shape)
 
 # Logistic Regression 
 logreg = LogisticRegression()
@@ -133,6 +137,7 @@ knn = KNeighborsClassifier(n_neighbors = 3)
 knn.fit(X_train, Y_train)
 Y_pred = knn.predict(X_test)
 acc_knn = round(knn.score(X_train, Y_train) * 100, 2)
+print(acc_knn)
 
 # Gaussian Naive Bayes
 gaussian = GaussianNB()
@@ -168,8 +173,8 @@ acc_decision_tree = round(decision_tree.score(X_train, Y_train) * 100, 2)
 random_forest = RandomForestClassifier(n_estimators=100)
 random_forest.fit(X_train, Y_train)
 Y_pred = random_forest.predict(X_test)
-random_forest.score(X_train, Y_train)
 acc_random_forest = round(random_forest.score(X_train, Y_train) * 100, 2)
+print(acc_random_forest)
 
 print('\n')
 models = pd.DataFrame({
@@ -186,4 +191,4 @@ submission = pd.DataFrame({
         "PassengerId": testing_set["PassengerId"],
         "Survived": Y_pred
     })
-submission.to_csv('submission_improved.csv', index=False)
+submission.to_csv('comp1_submission.csv', index=False)
