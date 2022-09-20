@@ -6,8 +6,6 @@
 # Adapted from https://www.kaggle.com/code/preejababu/titanic-data-science-solutions#Acquire-data 
 # and a continuation of homework 1 question 2 
 # ----------------------------
-# TODO: DELETE UNESSECARY PRINT STATEMENTS
-
 # data analysis and wrangling
 import pandas as pd
 
@@ -21,7 +19,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import Perceptron
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
-from xgboost import XGBClassifier
+#from xgboost import XGBClassifier
 
 training_path = 'input/train.csv'
 testing_path = 'input/test.csv'
@@ -110,24 +108,24 @@ X_train = training_set.drop("Survived", axis=1)
 Y_train = training_set["Survived"]
 #print("Shape of Y_train: ", Y_train.shape)
 X_test  = testing_set.drop("PassengerId", axis=1).copy()
-print("Shape of X_test: ", X_test.shape)
+#print("Shape of X_test: ", X_test.shape)
 
 # Logistic Regression 
 logreg = LogisticRegression()
 logreg.fit(X_train, Y_train)
-Y_pred = logreg.predict(X_test)
+#Y_pred = logreg.predict(X_test)
 acc_log = round(logreg.score(X_train, Y_train) * 100, 2)
 
 # Support Vector Machines
 svc = SVC()
 svc.fit(X_train, Y_train)
-Y_pred = svc.predict(X_test)
+#Y_pred = svc.predict(X_test)
 acc_svc = round(svc.score(X_train, Y_train) * 100, 2)
 
 # KNN
 knn = KNeighborsClassifier(n_neighbors = 3)
 knn.fit(X_train, Y_train)
-Y_pred = knn.predict(X_test)
+#Y_pred = knn.predict(X_test)
 acc_knn = round(knn.score(X_train, Y_train) * 100, 2)
 
 # Gaussian Naive Bayes
@@ -161,34 +159,36 @@ decision_tree.fit(X_train, Y_train)
 acc_decision_tree = round(decision_tree.score(X_train, Y_train) * 100, 2)
 
 # Random Forest
-# BEST SO FAR
-random_forest = RandomForestClassifier(min_samples_split=9, min_samples_leaf=52, max_features=167, max_depth=5)
+# These is the model and the corresponding parameters used to acheive a score of 0.7751
+random_forest = RandomForestClassifier(min_samples_split=9, min_samples_leaf=52, max_depth=5)
 random_forest.fit(X_train, Y_train)
 Y_pred = random_forest.predict(X_test)
 acc_random_forest = round(random_forest.score(X_train, Y_train) * 100, 2)
 
 # Gradient Boosting
-gradient_boost = GradientBoostingClassifier(min_samples_split=9, min_samples_leaf=52, max_features=167, max_depth=5)
+gradient_boost = GradientBoostingClassifier(min_samples_split=9, min_samples_leaf=52, max_depth=5)
 gradient_boost.fit(X_train, Y_train)
 #Y_pred = gradient_boost.predict(X_test)
 acc_gradient_boost = round(gradient_boost.score(X_train, Y_train) * 100, 2)
 
 # XGB
-xgb = XGBClassifier()
-xgb.fit(X_train, Y_train)
+#xgb = XGBClassifier()
+#xgb.fit(X_train, Y_train)
 #Y_pred = xgb.predict(X_test)
-acc_xgb = round(xgb.score(X_train, Y_train) * 100, 2)
+#acc_xgb = round(xgb.score(X_train, Y_train) * 100, 2)
 
 print('\n')
+
+# These are the list of models that we considered 
 models = pd.DataFrame({
     'Model': ['Support Vector Machines', 'KNN', 'Logistic Regression', 
               'Random Forest', 'Naive Bayes', 'Perceptron', 
               'Stochastic Gradient Decent', 'Linear SVC', 
-              'Decision Tree', 'Gradient Boost', 'XGB'],
+              'Decision Tree', 'Gradient Boost'],
     'Score': [acc_svc, acc_knn, acc_log, 
               acc_random_forest, acc_gaussian, acc_perceptron, 
               acc_sgd, acc_linear_svc, acc_decision_tree, 
-              acc_gradient_boost, acc_xgb]})
+              acc_gradient_boost]})
 print(models.sort_values(by='Score', ascending=False))
 
 submission = pd.DataFrame({
