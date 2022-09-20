@@ -11,10 +11,6 @@
 # data analysis and wrangling
 import pandas as pd
 
-# preprocessing
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import make_column_transformer
-
 # machine learning
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC, LinearSVC
@@ -25,6 +21,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import Perceptron
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
+from xgboost import XGBClassifier
 
 training_path = 'input/train.csv'
 testing_path = 'input/test.csv'
@@ -51,8 +48,6 @@ for dataset in combine:
     dataset['Title'] = dataset['Title'].replace('Ms', 'Miss')
     dataset['Title'] = dataset['Title'].replace('Mme', 'Mrs')
 
-#print(training_set[['Title', 'Survived']].groupby(['Title'], as_index=False).mean())
-
 # Converting titles to ordinal
 title_mapping = {"Mr": 1, "Miss": 2, "Mrs": 3, "Master": 4, "Rare": 5}
 for dataset in combine:
@@ -65,10 +60,10 @@ training_set = training_set.drop(['Name', 'PassengerId'], axis=1)
 testing_set = testing_set.drop(['Name'], axis=1)
 combine = [training_set, testing_set]
 
-# CONVERTING NON-NUMERIC DATA INTO NUMERIC DATA
-#Binarization of sex
-for dataset in combine:
-    dataset['Sex'] = dataset['Sex'].map( {'female': 1, 'male': 0} ).astype(int)
+# Interpolating missing age values separately 
+training_set['Age'] = training_set['Age'].interpolate()
+testing_set['Age'] = training_set['Age'].interpolate()
+combine = [training_set, testing_set]
 
 # Completing Embarked and turning it to numeric
 freq_port = training_set.Embarked.dropna().mode()[0]
@@ -79,17 +74,9 @@ for dataset in combine:
 for dataset in combine:
     dataset['Embarked'] = dataset['Embarked'].map( {'S': 0, 'C': 1, 'Q': 2} ).astype(int)
 
-# Filling gaps in Age
-#print("\nBefore inserting age")
-#print(training_set.head(10))
-
-# Interpolating missing age values separately 
-training_set['Age'] = training_set['Age'].interpolate()
-testing_set['Age'] = training_set['Age'].interpolate()
-combine = [training_set, testing_set]
-
-print("After inserting age")
-print(training_set.head(10))
+#Binarization of sex
+for dataset in combine:
+    dataset['Sex'] = dataset['Sex'].map( {'female': 1, 'male': 0} ).astype(int)
 
 # Combining existing features parch and sibsp
 for dataset in combine:
@@ -112,8 +99,6 @@ for dataset in combine:
     dataset.loc[(dataset['Fare'] > 14.454) & (dataset['Fare'] <= 31), 'Fare']   = 2
     dataset.loc[ dataset['Fare'] > 31, 'Fare'] = 3
     dataset['Fare'] = dataset['Fare'].astype(int)
-
-combine = [training_set, testing_set]
 
 print("\nFinal Working test and training sets:")
 print('\n', training_set.head(10))
@@ -176,25 +161,34 @@ decision_tree.fit(X_train, Y_train)
 acc_decision_tree = round(decision_tree.score(X_train, Y_train) * 100, 2)
 
 # Random Forest
-random_forest = RandomForestClassifier(min_samples_leaf=52)
+# BEST SO FAR
+random_forest = RandomForestClassifier(min_samples_split=9, min_samples_leaf=52, max_features=167, max_depth=5)
 random_forest.fit(X_train, Y_train)
 Y_pred = random_forest.predict(X_test)
 acc_random_forest = round(random_forest.score(X_train, Y_train) * 100, 2)
 
-# XGB
-gradient_boost = GradientBoostingClassifier()
+# Gradient Boosting
+gradient_boost = GradientBoostingClassifier(min_samples_split=9, min_samples_leaf=52, max_features=167, max_depth=5)
 gradient_boost.fit(X_train, Y_train)
+#Y_pred = gradient_boost.predict(X_test)
 acc_gradient_boost = round(gradient_boost.score(X_train, Y_train) * 100, 2)
+
+# XGB
+xgb = XGBClassifier()
+xgb.fit(X_train, Y_train)
+#Y_pred = xgb.predict(X_test)
+acc_xgb = round(xgb.score(X_train, Y_train) * 100, 2)
 
 print('\n')
 models = pd.DataFrame({
     'Model': ['Support Vector Machines', 'KNN', 'Logistic Regression', 
               'Random Forest', 'Naive Bayes', 'Perceptron', 
               'Stochastic Gradient Decent', 'Linear SVC', 
-              'Decision Tree', 'Gradient Boost'],
+              'Decision Tree', 'Gradient Boost', 'XGB'],
     'Score': [acc_svc, acc_knn, acc_log, 
               acc_random_forest, acc_gaussian, acc_perceptron, 
-              acc_sgd, acc_linear_svc, acc_decision_tree, acc_gradient_boost]})
+              acc_sgd, acc_linear_svc, acc_decision_tree, 
+              acc_gradient_boost, acc_xgb]})
 print(models.sort_values(by='Score', ascending=False))
 
 submission = pd.DataFrame({
