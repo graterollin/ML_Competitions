@@ -5,3 +5,6 @@ This repo was made to hold the related files for all competition assignments for
 
 ### Competition1_Warm-up
 Contains the code for the first "Warm-up" competition based on the Kaggle Titanic Dataset
+
+### Competition2
+Contains the code for the "Spaceship Titanic" Kaggle challenge
