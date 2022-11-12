@@ -11,6 +11,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC, LinearSVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import Perceptron
+from sklearn.linear_model import SGDClassifier
 
 training_path = 'input/train.csv'
 testing_path = 'input/test.csv'
@@ -21,12 +27,6 @@ combine = [training_set, testing_set]
 
 # DATA PREPROCESSING
 # =======================================
-
-# Display the data type for every feature 
-#training_set.info()
-#print('_'*40)
-#testing_set.info()
-
 print(training_set.describe())
 print('\n')
 print(training_set.describe(include=['O']))
@@ -77,12 +77,6 @@ freq_Destination = training_set.Destination.dropna().mode()[0]
 
 for dataset in combine:
     dataset['Destination'] = dataset['Destination'].fillna(freq_Destination)
-
-# Drop rows that we cannot fill in through statistical methods
-# TODO: See if this will cause an error in the code when it comes to running the models
-for dataset in combine:
-    dataset['Cabin'] = dataset['Cabin'].dropna()
-    dataset['Name'] = dataset['Name'].dropna()
 
 # Create new feature that is a combination of all monetary values
 for dataset in combine:
@@ -202,25 +196,104 @@ for dataset in combine:
     dataset['Cabin'] = dataset['Cabin'].str.strip().str[-1]
     dataset['Cabin'] = dataset['Cabin'].replace('P', 0)
     dataset['Cabin'] = dataset['Cabin'].replace('S', 1)
-    dataset['Cabin'] = dataset['Cabin'].dropna()
+
+freq_cabin = training_set.Cabin.dropna().mode()[0]
+
+# finding the majority for cabin side
+print("Most frequent cabin:") 
+print(freq_cabin)
+print('\n')
+
+# fill the null cabin values with the mode of cabin 
+for dataset in combine:
+    dataset['Cabin'] = dataset['Cabin'].fillna(freq_cabin)
+    dataset['Cabin'] = dataset['Cabin'].astype(int)
 
 print(training_set[['Cabin', 'Transported']].groupby(['Cabin'], as_index=False).mean().sort_values(by='Transported', ascending=False))
 print('\n')
 
+print(training_set.describe(include=['O']))
+print('\n')
+
 # Dropping Name 
-training_set = training_set.drop(['Name'], axis=1)
+training_set = training_set.drop(['Name', 'PassengerId'], axis=1)
 testing_set = testing_set.drop(['Name'], axis=1)
 combine = [training_set, testing_set]
 
-print(training_set.head())
+print(training_set.head(10))
+print('\n')
+print(testing_set.head(10))
 print('\n')
 
-# Model ---------------------------------
+# Print out a list of all the columns and the amount of null values 
+# if they still exist 
+#print("Nulls in the training set:")
+#print(training_set.isnull().sum())
+#print('\n')
+#print("Nulls in the testing set:")
+#print(testing_set.isnull().sum())
+#print('\n')
+
+#print(training_set.head())
+#print('\n')
+
+# Model 
+# ===============================================
 X_train = training_set.drop("Transported", axis=1)
 Y_train = training_set["Transported"]
 X_test = testing_set.drop("PassengerId", axis=1).copy()
 print(X_train.shape, Y_train.shape, X_test.shape)
 print('\n')
+
+# Logistic Regression 
+logreg = LogisticRegression()
+logreg.fit(X_train, Y_train)
+#Y_pred = logreg.predict(X_test)
+acc_log = round(logreg.score(X_train, Y_train) * 100, 2)
+
+# Modeling correlation (TODO: Note that this is different values)
+coeff_df = pd.DataFrame(training_set.columns.delete(0))
+coeff_df.columns = ['Feature']
+coeff_df["Correlation"] = pd.Series(logreg.coef_[0])
+
+print(coeff_df.sort_values(by='Correlation', ascending=False))
+print('\n')
+
+# Support Vector Machines (TODO: Note that this is a different value)
+svc = SVC()
+svc.fit(X_train, Y_train)
+#Y_pred = svc.predict(X_test)
+acc_svc = round(svc.score(X_train, Y_train) * 100, 2)
+
+# KNN
+knn = KNeighborsClassifier(n_neighbors = 3)
+knn.fit(X_train, Y_train)
+#Y_pred = knn.predict(X_test)
+acc_knn = round(knn.score(X_train, Y_train) * 100, 2)
+
+# Gaussian Naive Bayes
+gaussian = GaussianNB()
+gaussian.fit(X_train, Y_train)
+#Y_pred = gaussian.predict(X_test)
+acc_gaussian = round(gaussian.score(X_train, Y_train) * 100, 2)
+
+# Perceptron
+perceptron = Perceptron()
+perceptron.fit(X_train, Y_train)
+#Y_pred = perceptron.predict(X_test)
+acc_perceptron = round(perceptron.score(X_train, Y_train) * 100, 2)
+
+# Linear SVC
+linear_svc = LinearSVC()
+linear_svc.fit(X_train, Y_train)
+#Y_pred = linear_svc.predict(X_test)
+acc_linear_svc = round(linear_svc.score(X_train, Y_train) * 100, 2)
+
+# Stochastic Gradient Descent
+sgd = SGDClassifier()
+sgd.fit(X_train, Y_train)
+#Y_pred = sgd.predict(X_test)
+acc_sgd = round(sgd.score(X_train, Y_train) * 100, 2)
 
 # Decision Tree
 decision_tree = DecisionTreeClassifier()
@@ -236,12 +309,17 @@ acc_random_forest = round(random_forest.score(X_train, Y_train) * 100, 2)
 
 # These are the list of models that we considered 
 models = pd.DataFrame({
-    'Model': ['Decision Tree', 'Random Forest'],
-    'Score': [acc_decision_tree, acc_random_forest]})
+    'Model': ['Support Vector Machines', 'KNN', 'Logistic Regression', 
+              'Random Forest', 'Naive Bayes', 'Perceptron', 
+              'Stochastic Gradient Decent', 'Linear SVC', 
+              'Decision Tree'],
+    'Score': [acc_svc, acc_knn, acc_log, 
+              acc_random_forest, acc_gaussian, acc_perceptron, 
+              acc_sgd, acc_linear_svc, acc_decision_tree]})
 print(models.sort_values(by='Score', ascending=False))
 
 submission = pd.DataFrame({
         "PassengerId": testing_set["PassengerId"],
-        "Survived": Y_pred
+        "Transported": Y_pred
     })
 #submission.to_csv('comp2_submission.csv', index=False)
