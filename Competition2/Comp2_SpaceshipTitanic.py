@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.model_selection import GridSearchCV
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -295,17 +296,57 @@ sgd.fit(X_train, Y_train)
 #Y_pred = sgd.predict(X_test)
 acc_sgd = round(sgd.score(X_train, Y_train) * 100, 2)
 
+# Function to tune the hyperparameters of a model
+def fine_tune(model, params):
+    grid_search = GridSearchCV(estimator=model,
+                                param_grid=params,
+                                cv=4, 
+                                scoring='accuracy')
+    return grid_search
+
 # Decision Tree
 decision_tree = DecisionTreeClassifier()
-decision_tree.fit(X_train, Y_train)
-#Y_pred = decision_tree.predict(X_test)
-acc_decision_tree = round(decision_tree.score(X_train, Y_train) * 100, 2)
+
+# Parameters we want to cycle through for the decision tree
+dt_params = {
+    'max_depth': [3, 5, 10, 20],
+    'min_samples_leaf': [5, 10, 20, 50, 100],
+}
+
+dt_grid_search = fine_tune(decision_tree, dt_params)
+dt_grid_search.fit(X_train, Y_train)
+
+print("\nBest decision tree parameters:")
+print(dt_grid_search.best_estimator_)
+
+# Set the decision tree to the best parameters 
+tuned_decision_tree = dt_grid_search.best_estimator_
+tuned_decision_tree.fit(X_train, Y_train)
+Y_pred = tuned_decision_tree.predict(X_test)
+acc_decision_tree = round(tuned_decision_tree.score(X_train, Y_train) * 100, 2)
 
 # Random Forest
 random_forest = RandomForestClassifier()
-random_forest.fit(X_train, Y_train)
-Y_pred = random_forest.predict(X_test)
-acc_random_forest = round(random_forest.score(X_train, Y_train) * 100, 2)
+
+# Parameters we want to cycle through for the random forest
+rf_params = {
+    'min_samples_split': [3, 5, 10, 20],
+    'max_depth': [3, 5, 10, 20],
+    'min_samples_leaf': [3, 5, 10, 20]
+}
+
+rf_grid_search = fine_tune(random_forest, rf_params)
+rf_grid_search.fit(X_train, Y_train)
+
+print("\nBest random forest parameters:")
+print(rf_grid_search.best_estimator_)
+print('\n')
+
+# Set the random forest model to the best parameters 
+tuned_random_forest = rf_grid_search.best_estimator_
+tuned_random_forest.fit(X_train, Y_train)
+#Y_pred = tuned_random_forest.predict(X_test)
+acc_random_forest = round(tuned_random_forest.score(X_train, Y_train) * 100, 2)
 
 # These are the list of models that we considered 
 models = pd.DataFrame({
@@ -322,4 +363,4 @@ submission = pd.DataFrame({
         "PassengerId": testing_set["PassengerId"],
         "Transported": Y_pred
     })
-#submission.to_csv('comp2_submission.csv', index=False)
+submission.to_csv('comp2_submission.csv', index=False)
